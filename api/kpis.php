@@ -1,5 +1,5 @@
 <?php
-// API para gerar KPIs
+// API para calcular e retornar KPIs
 require_once '../config/config.php';
 
 header('Content-Type: application/json; charset=utf-8');
