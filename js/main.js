@@ -460,7 +460,7 @@ function confirmarViatura() {
     .then(data => {
         if (data.success) {
             mostrarNotificacao(data.message || 'Viatura salva com sucesso!', 'sucesso');
-            fecharModal('modalViatura');
+            closeModal('modalViatura');
             form.reset();
             form.dataset.action = 'create';
             buscarViaturas();
@@ -714,7 +714,7 @@ function abrirModal(modalId) {
     }
 }
 
-function fecharModal(modalId) {
+function closeModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
         modal.classList.remove('active');
