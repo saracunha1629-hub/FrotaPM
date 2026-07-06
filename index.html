@@ -6,6 +6,7 @@
     <title>FrotaPM - Gestão de Frota</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/maps-dashboard.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <!-- Leaflet CSS -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
@@ -438,7 +439,9 @@
                         <h2>Rastreamento em Tempo Real</h2>
                     </div>
                     <div class="tracking-container">
-                        <div id="map" class="map-container"></div>
+                        <div class="map-container">
+                            <div id="map"></div>
+                        </div>
                         <div class="tracking-info">
                             <div class="filter-group">
                                 <label>Filtrar por Status:</label>
