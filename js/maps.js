@@ -1,8 +1,9 @@
-// Google Maps Integration para Rastreamento em Tempo Real
+// Leaflet Map Integration para Rastreamento em Tempo Real
+// Usando OpenStreetMap - Sem necessidade de chave de API
 
 let map;
 let markers = [];
-let infoWindows = [];
+let markerLayers = {};
 
 // Dados simulados de viaturas com coordenadas
 const viaturasPosicoes = [
@@ -48,103 +49,19 @@ const viaturasPosicoes = [
     }
 ];
 
-// Inicializar o mapa
+// Inicializar o mapa com Leaflet
 function inicializarMapa() {
     // Coordenadas centrais de Blumenau
-    const blumenau = { lat: -26.8200, lng: -49.0650 };
+    const blumenau = [-26.8200, -49.0650];
 
-    map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 14,
-        center: blumenau,
-        styles: [
-            {
-                "elementType": "geometry",
-                "stylers": [{"color": "#f5f5f5"}]
-            },
-            {
-                "elementType": "labels.icon",
-                "stylers": [{"visibility": "off"}]
-            },
-            {
-                "elementType": "labels.text.fill",
-                "stylers": [{"color": "#616161"}]
-            },
-            {
-                "elementType": "labels.text.stroke",
-                "stylers": [{"color": "#f5f5f5"}]
-            },
-            {
-                "featureType": "administrative.land_parcel",
-                "elementType": "labels.text.fill",
-                "stylers": [{"color": "#bdbdbd"}]
-            },
-            {
-                "featureType": "poi",
-                "elementType": "geometry",
-                "stylers": [{"color": "#eeeeee"}]
-            },
-            {
-                "featureType": "poi",
-                "elementType": "labels.text.fill",
-                "stylers": [{"color": "#757575"}]
-            },
-            {
-                "featureType": "poi.park",
-                "elementType": "geometry",
-                "stylers": [{"color": "#e5e5e5"}]
-            },
-            {
-                "featureType": "poi.park",
-                "elementType": "labels.text.fill",
-                "stylers": [{"color": "#9e9e9e"}]
-            },
-            {
-                "featureType": "road",
-                "elementType": "geometry",
-                "stylers": [{"color": "#ffffff"}]
-            },
-            {
-                "featureType": "road.arterial",
-                "elementType": "labels.text.fill",
-                "stylers": [{"color": "#757575"}]
-            },
-            {
-                "featureType": "road.highway",
-                "elementType": "geometry",
-                "stylers": [{"color": "#dadada"}]
-            },
-            {
-                "featureType": "road.highway",
-                "elementType": "labels.text.fill",
-                "stylers": [{"color": "#616161"}]
-            },
-            {
-                "featureType": "road.local",
-                "elementType": "labels.text.fill",
-                "stylers": [{"color": "#9e9e9e"}]
-            },
-            {
-                "featureType": "transit.line",
-                "elementType": "geometry",
-                "stylers": [{"color": "#e5e5e5"}]
-            },
-            {
-                "featureType": "transit.station",
-                "elementType": "geometry",
-                "stylers": [{"color": "#eeeeee"}]
-            },
-            {
-                "featureType": "water",
-                "elementType": "geometry",
-                "stylers": [{"color": "#c9c9c9"}]
-            },
-            {
-                "featureType": "water",
-                "elementType": "labels.text.fill",
-                "stylers": [{"color": "#9e9e9e"}]
-            }
-        ]
-    });
+    // Criar mapa
+    map = L.map('map').setView(blumenau, 14);
+
+    // Adicionar camada de tiles do OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(map);
 
     // Adicionar marcadores das viaturas
     adicionarMarcadores();
@@ -158,77 +75,92 @@ function adicionarMarcadores() {
 
 function adicionarMarcador(viatura) {
     // Determinar cor do marcador baseado no status
-    let cor = 'red';
+    let cor = '#EF4444'; // vermelho
+    let icone = '🚓';
+    
     if (viatura.status === 'operacao') {
-        cor = 'green';
+        cor = '#22C55E'; // verde
     } else if (viatura.status === 'manutencao') {
-        cor = 'orange';
+        cor = '#F97316'; // laranja
     } else if (viatura.status === 'indisponivel') {
-        cor = 'red';
+        cor = '#EF4444'; // vermelho
     }
 
-    // Criar ícone customizado
-    const icon = `
+    // Criar ícone customizado usando Leaflet Awesome Markers ou SVG
+    const html = `
         <div style="
             background-color: ${cor};
             width: 40px;
             height: 40px;
-            border-radius: 50% 50% 0 0;
-            transform: rotate(45deg);
+            border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             color: white;
             font-weight: bold;
-            border: 2px solid white;
+            border: 3px solid white;
             box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+            font-size: 20px;
         ">
-            🚓
+            ${icone}
         </div>
     `;
 
-    const marker = new google.maps.Marker({
-        position: { lat: viatura.latitude, lng: viatura.longitude },
-        map: map,
-        title: `${viatura.id} - ${viatura.placa}`,
-        icon: {
-            path: google.maps.SymbolPath.CIRCLE,
-            scale: 8,
-            fillColor: cor,
-            fillOpacity: 0.7,
-            strokeColor: 'white',
-            strokeWeight: 2
-        }
+    const customIcon = L.divIcon({
+        html: html,
+        iconSize: [40, 40],
+        className: 'custom-marker'
     });
 
-    // Criar conteúdo da info window
-    const conteudo = `
+    // Criar marcador
+    const marker = L.marker([viatura.latitude, viatura.longitude], {
+        icon: customIcon,
+        title: `${viatura.id} - ${viatura.placa}`
+    }).addTo(map);
+
+    // Criar popup com informações
+    const popupContent = `
         <div style="font-family: Arial, sans-serif; min-width: 250px;">
-            <h4 style="margin: 0 0 10px 0; color: #2c3e50;">${viatura.id} - ${viatura.placa}</h4>
-            <p style="margin: 5px 0;"><strong>Status:</strong> <span style="color: ${cor}; font-weight: bold;">${getStatusLabel(viatura.status)}</span></p>
-            <p style="margin: 5px 0;"><strong>Localização:</strong> ${viatura.latitude.toFixed(4)}, ${viatura.longitude.toFixed(4)}</p>
-            <p style="margin: 5px 0;"><strong>Velocidade:</strong> ${viatura.velocidade} km/h</p>
-            <p style="margin: 5px 0;"><strong>Quilometragem:</strong> ${viatura.quilometragem.toLocaleString('pt-BR')} km</p>
-            <p style="margin: 5px 0;"><strong>Última atualização:</strong> ${viatura.ultima_atualizacao}</p>
+            <h4 style="margin: 0 0 10px 0; color: #1F2937;">
+                ${viatura.id} - ${viatura.placa}
+            </h4>
+            <p style="margin: 5px 0;"><strong>Status:</strong> 
+                <span style="color: ${cor}; font-weight: bold;">
+                    ${getStatusLabel(viatura.status)}
+                </span>
+            </p>
+            <p style="margin: 5px 0;"><strong>Localização:</strong> 
+                ${viatura.latitude.toFixed(4)}, ${viatura.longitude.toFixed(4)}
+            </p>
+            <p style="margin: 5px 0;"><strong>Velocidade:</strong> 
+                ${viatura.velocidade} km/h
+            </p>
+            <p style="margin: 5px 0;"><strong>Quilometragem:</strong> 
+                ${viatura.quilometragem.toLocaleString('pt-BR')} km
+            </p>
+            <p style="margin: 5px 0;"><strong>Última atualização:</strong> 
+                ${viatura.ultima_atualizacao}
+            </p>
             <div style="margin-top: 10px; border-top: 1px solid #ddd; padding-top: 10px;">
-                <a href="#" onclick="abrirDetalhesViatura('${viatura.id}'); return false;" style="color: #3498db; text-decoration: none; margin-right: 10px;">Ver Detalhes</a>
-                <a href="#" onclick="abrirHistoricoViatura('${viatura.id}'); return false;" style="color: #3498db; text-decoration: none;">Histórico</a>
+                <button onclick="abrirDetalhesViatura('${viatura.id}')" 
+                    style="background: #3B82F6; color: white; border: none; padding: 5px 10px; 
+                           border-radius: 3px; cursor: pointer; margin-right: 5px;">
+                    Ver Detalhes
+                </button>
+                <button onclick="abrirHistoricoViatura('${viatura.id}')" 
+                    style="background: #8B5CF6; color: white; border: none; padding: 5px 10px; 
+                           border-radius: 3px; cursor: pointer;">
+                    Histórico
+                </button>
             </div>
         </div>
     `;
 
-    const infoWindow = new google.maps.InfoWindow({
-        content: conteudo
-    });
-
-    marker.addListener('click', function() {
-        // Fechar todas as info windows abertas
-        infoWindows.forEach(iw => iw.close());
-        infoWindow.open(map, marker);
-    });
-
+    marker.bindPopup(popupContent);
+    
+    // Armazenar marcador para futura atualização
+    markerLayers[viatura.id] = marker;
     markers.push(marker);
-    infoWindows.push(infoWindow);
 }
 
 function getStatusLabel(status) {
@@ -241,22 +173,26 @@ function getStatusLabel(status) {
 }
 
 function abrirDetalhesViatura(viaturaId) {
-    alert(`Abrindo detalhes da viatura ${viaturaId}`);
-    // Aqui você pode implementar a lógica para abrir um modal com detalhes
+    const viatura = viaturasPosicoes.find(v => v.id === viaturaId);
+    if (viatura) {
+        alert(`Detalhes da Viatura ${viaturaId}\n\nPlaca: ${viatura.placa}\nQuilometragem: ${viatura.quilometragem} km\nVelocidade: ${viatura.velocidade} km/h`);
+    }
 }
 
 function abrirHistoricoViatura(viaturaId) {
-    alert(`Abrindo histórico da viatura ${viaturaId}`);
-    // Aqui você pode implementar a lógica para abrir um modal com histórico
+    alert(`Histórico da Viatura ${viaturaId}\n\nClique para ver mais detalhes no sistema.`);
 }
 
 // Função para filtrar viaturas no mapa
 function filtrarViaturasNoMapa(status) {
-    markers.forEach((marker, index) => {
-        if (status === '' || viaturasPosicoes[index].status === status) {
-            marker.setVisible(true);
-        } else {
-            marker.setVisible(false);
+    viaturasPosicoes.forEach(viatura => {
+        const marker = markerLayers[viatura.id];
+        if (marker) {
+            if (status === '' || viatura.status === status) {
+                marker.setOpacity(1);
+            } else {
+                marker.setOpacity(0.3);
+            }
         }
     });
 }
@@ -278,14 +214,12 @@ function atualizarPosicoes() {
                 viatura.latitude += (Math.random() - 0.5) * 0.001;
                 viatura.longitude += (Math.random() - 0.5) * 0.001;
                 viatura.velocidade = Math.floor(Math.random() * 80) + 20;
-            }
-            
-            // Atualizar marcador
-            if (markers[index]) {
-                markers[index].setPosition({
-                    lat: viatura.latitude,
-                    lng: viatura.longitude
-                });
+                
+                // Atualizar marcador
+                const marker = markerLayers[viatura.id];
+                if (marker) {
+                    marker.setLatLng([viatura.latitude, viatura.longitude]);
+                }
             }
         });
     }, 5000); // Atualizar a cada 5 segundos
